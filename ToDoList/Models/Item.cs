@@ -7,11 +7,13 @@ namespace ToDoList.Models
   {
     private string _description;
     private int _id;
+    private string _dueDate;
 
-    public Item (string description, int id = 0)
+    public Item (string description, string dueDate, int id = 0)
     {
       _description = description;
       _id = id;
+      _dueDate = dueDate;
     }
 
     public string GetDescription()
@@ -29,6 +31,11 @@ namespace ToDoList.Models
       return _id;
     }
 
+    public string GetDueDate()
+    {
+      return _dueDate;
+    }
+
     public static List<Item> GetAll()
     {
       List<Item> allItems = new List<Item> { };
@@ -39,9 +46,10 @@ namespace ToDoList.Models
       MySqlDataReader rdr = cmd.ExecuteReader() as MySqlDataReader;
       while(rdr.Read())
       {
-        int itemId = rdr.GetInt32(0);
-        string itemDescription = rdr.GetString(1);
-        Item newItem = new Item(itemDescription, itemId);
+        int itemId = rdr.GetInt32(2);
+        string itemDescription = rdr.GetString(0);
+        string itemDueDate = rdr.GetString(1);
+        Item newItem = new Item(itemDescription, itemDueDate, itemId);
         allItems.Add(newItem);
       }
       conn.Close();
@@ -79,12 +87,13 @@ namespace ToDoList.Models
       var rdr = cmd.ExecuteReader() as MySqlDataReader;
       int itemId = 0;
       string itemDescription = "";
+      string itemDueDate = "";
       while (rdr.Read())
       {
          itemId = rdr.GetInt32(0);
          itemDescription = rdr.GetString(1);
       }
-      Item foundItem= new Item(itemDescription, itemId);  // This line is new!
+      Item foundItem = new Item(itemDescription, itemDueDate, itemId);  // This line is new!
        conn.Close();
        if (conn != null)
        {
@@ -113,11 +122,17 @@ namespace ToDoList.Models
       MySqlConnection conn = DB.Connection();
       conn.Open();
       var cmd = conn.CreateCommand() as MySqlCommand;
-      cmd.CommandText = @"INSERT INTO items (description) VALUES (@ItemDescription);";
+      cmd.CommandText = @"INSERT INTO items (description, dueDate) VALUES (@ItemDescription, @DueDate);";
       MySqlParameter description = new MySqlParameter();
       description.ParameterName = "@ItemDescription";
       description.Value = this._description;
       cmd.Parameters.Add(description);
+
+      MySqlParameter dueDate = new MySqlParameter();
+      dueDate.ParameterName = "@DueDate";
+      dueDate.Value = this._dueDate;
+      cmd.Parameters.Add(dueDate);
+
       cmd.ExecuteNonQuery();
       _id = (int) cmd.LastInsertedId;
        conn.Close();
